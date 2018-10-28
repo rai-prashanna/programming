@@ -152,8 +152,12 @@ in
   getPathFromPoints (copy) (b) :: getConnectedPaths' (Connected(xs)) copy  
 end
 
-
-fun connected_components ((Connected(x::xs))) = let
+fun connected_components (Void) = [] | 
+  connected_components (Connected((Point(a),[])::xs)) = let
+  val result1 = getConnectedPaths' (Connected((Point(a),[])::xs)) (Connected((Point(a),[])::xs))
+in
+  conv result1
+end | connected_components ((Connected(x::xs))) = let 
   val unfilteredConectedPaths = getConnectedPaths' ((Connected(x::xs))) ((Connected(x::xs)))
   val intermediateresult = mergePath' unfilteredConectedPaths unfilteredConectedPaths
 in conv (intermediateresult) end
@@ -161,20 +165,9 @@ in conv (intermediateresult) end
 end;
 
 
-functor GRAPHAlGORITHMS(G: GRAPH) =
+functor GraphAlgorithms(G: GRAPH) =
 struct
   fun dot graph = G.displayGraph (graph)
   fun connected_components graph = G.connected_components (graph)  
 end;
 
-structure graphalgo = GRAPHAlGORITHMS(Graph);
-graphalgo.dot g1;
-graphalgo.dot g2;
-graphalgo.dot g3;
-
-
-
-
-graphalgo.connected_components g1;
-graphalgo.connected_components g2;
-graphalgo.connected_components g3;
