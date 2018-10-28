@@ -1,0 +1,161 @@
+signature GRAPH = 
+sig 
+  type ''a T
+  val empty: ''a T
+  val add_vertex: ''a T -> ''a  -> ''a T
+  val add_edge: ''a T -> ''a -> ''a ->''a T
+  val vertices: ''a T -> ''a list
+  val neighbors: ''a T -> ''a -> ''a list
+end;
+
+
+*****
+
+*********
+structure Graph : GRAPH =
+struct
+datatype ''a component = Void | Point of (''a ) | Connected of (''a component * (''a component) list) list | Edge of (''a component * ''a component);
+type ''a T = ''a component 
+val empty = Void
+fun add_vertex Void (a) = Point(a)
+  | add_vertex (Point(a)) (b)=Connected([(Point(a),[]),(Point(b),[])])
+  | add_vertex (Connected(xs)) (b)=Connected([(Point(b),[])] @ xs)
+
+fun addComponent (Connected([])) (Connected([])) = Connected([]) | addComponent (Connected([])) (Connected(x::xs)) = Connected(x::xs) 
+  | addComponent (Connected(xs)) (Connected(ys)) = Connected(xs@ys)
+
+fun add_edge Void point1 point2 = (Connected([]))
+  | add_edge (Point(a)) point1 point2 = (Connected([]))
+  | add_edge (Connected([])) point1 point2 =(Connected([]))
+  | add_edge (Connected(x::xs): ''a component) (point1:''a) (point2:''a) =  
+  let 
+    val (point , edges) = x
+    val (Point(value)) = point
+    val pointOne =Point(point1)
+    val pointTwo =Point(point2)
+    in 
+      if (value=point1 orelse value=point2) then addComponent (Connected([(point,[Edge(Point(point1),Point(point2))]@edges)])) (add_edge (Connected(xs)) point1 point2) 
+    else (addComponent (Connected([x])) (add_edge (Connected(xs)) point1 point2))
+  end
+
+fun getPointsExcluding ([]) element= [] 
+| getPointsExcluding ((Edge (Point(value1), Point(value2)))::xs) element= if (value1 <> element) then [value1] @ getPointsExcluding (xs) element else [value2] @ getPointsExcluding (xs) element;
+
+
+fun vertices Void = []
+| vertices (Point(a)) = [a]
+| vertices (Connected([])) =[]
+| vertices (Connected(x::xs)) =
+  let
+    val (point , edges) = x
+    val (Point(value)) = point
+    in
+    [value] @ (vertices(Connected(xs)))
+end
+
+fun neighbors Void element = []
+| neighbors (Point(a)) element = []
+| neighbors (Connected([])) element = []
+| neighbors (Connected((Point(a),[])::xs)) element = neighbors (Connected(xs)) element
+| neighbors (Connected((Point(a),ys)::xs)) element = if (a=element) then getPointsExcluding (ys) element else neighbors (Connected(xs)) element
+end;
+**************
+***************
+vertices g1;
+neighbors g2 "a";
+neighbors g2 "b";
+neighbors g2 "c";
+*********************************************
+fun removeSimilarEdges ((Edge (Point(value11), Point(value12)))) ((Edge (Point(value21), Point(value22))))= if ((value11=value22) orelse (value11=value21)) then ((Edge (Point(value11), Point(value12)))::[]) 
+else if ((value12=value22) orelse (value12=value21)) then ((Edge (Point(value11), Point(value12)))::[]) else ((Edge (Point(value11), Point(value12))))::((Edge (Point(value21), Point(value22))))::[];
+
+fun getAllEdges (Connected([])) =[]
+  | getAllEdges (Connected((Point(a),[])::xs)) = getAllEdges(Connected(xs))
+  | getAllEdges (Connected((Point(a),ys)::xs)) = ys@getAllEdges(Connected(xs));
+
+fun filteredges [] = []
+| filteredges (x::y::xs) = (removeSimilarEdges x y) @ filteredges xs;
+
+fun getVerticesInString (Connected([])) = " "
+| getVerticesInString (Connected(x::xs)) =
+let
+   val (y::ys) = vertices (Connected(x::xs)) 
+ in
+ "\n"^"   "^y^";"^"   "^"\n"^"   "^getVerticesInString(Connected(xs))  
+ end;
+
+fun getedgesinstring [] = ""
+| getedgesinstring (((Edge (Point(value1), Point(value2))))::xs) = "\n"^"   "^value1^"  --  "^value2^";"^"  "^"\n"^"   "^getedgesinstring(xs);
+
+
+fun displayGraph (Connected([])) = print(" ")
+| displayGraph (Connected(x::xs)) = 
+  let
+    val edgeslist = getAllEdges (Connected(x::xs))
+    val edgeslist' = filteredges edgeslist
+    val edgesString = getedgesinstring edgeslist'
+    val verticesString = getVerticesInString (Connected(x::xs))  
+  in
+    print("\n"^"graph {"^verticesString^edgesString^"\n"^"}") 
+  end;
+
+displayGraph g2;  
+
+
+val edges1=getAllEdges g1;
+val edges2=getAllEdges g2;
+val edges3=filteredges edges2;
+val edges3 = [Edge (Point "a", Point "c"), Edge (Point "a", Point "b")]
+
+connectedEdges (Edge (Point "a", Point "c")) [Edge (Point "a", Point "c"), Edge (Point "a", Point "b") ,Edge (Point "d", Point "e")];
+connectedEdges (Edge (Point "d", Point "e")) [Edge (Point "a", Point "c"), Edge (Point "a", Point "b")];
+
+
+getedgesinstring it;
+
+
+removeSimilarEdges edge1 edge3;
+*********************************************
+
+val edge1= Edge(Point(1),Point(2));
+val edge3= Edge(Point(3),Point(4));
+
+val edge2= Edge(Point(2),Point(1));
+val g1 = add_vertex (add_vertex (add_vertex Void "a") "b") ("c");
+val g1 = add_vertex (add_vertex (add_vertex (add_vertex Void "a") "b") "c") "d"  ;
+
+val g2 = add_edge (add_edge (add_edge g1 "a" "b") "a" "c") "b" "c";
+
+val g2 = Graph.add_edge (Graph.add_edge (Graph.add_edge g1 "a" "b") "a" "c") "b" "c";
+val g3 = add_edge g2 "a" "c";
+val g3 = add_edge (add_edge g1 "a" "b") "a" "c";
+
+        val g1 = Graph.add_vertex (Graph.add_vertex (Graph.add_vertex Graph.empty "a") "b") "c";
+        val g2 = Graph.add_edge (Graph.add_edge (Graph.add_edge g1 "a" "b") "a" "c") "b" "c";
+        val g3 = Graph.add_edge (Graph.add_edge (Graph.add_edge g1 "b" "a") "c" "a") "c" "b"
+
+
+**********************************
+functor
+***********************************
+
+signature INT = 
+sig
+  val x: int
+end;
+
+structure Twice : INT =
+struct
+  val x = 2
+end;
+Twice.x;
+
+
+functor Double (I : INT) = 
+struct
+  val x =2 * I.x 
+end;
+
+structure Two = struct val X=2 end;
+structure Four = Double (Two);
+

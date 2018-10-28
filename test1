@@ -1,0 +1,331 @@
+signature GRAPH = 
+sig 
+  type ''a T
+  val empty: ''a T
+  val add_vertex: ''a T -> ''a  -> ''a T
+  val add_edge: ''a T -> ''a -> ''a ->''a T
+  val vertices: ''a T -> ''a list
+  val neighbors: ''a T -> ''a -> ''a list
+end;
+
+
+structure Graph : GRAPH =
+struct
+datatype ''a component = Void | Point of (''a ) | Connected of (''a component * (''a component) list) list | Edge of (''a component * ''a component);
+type ''a T = ''a component 
+val empty = Void
+fun add_vertex Void (a) = Point(a)
+  | add_vertex (Point(a)) (b)=Connected([(Point(a),[]),(Point(b),[])])
+  | add_vertex (Connected(xs)) (b)=Connected([(Point(b),[])] @ xs);
+
+fun addComponent (Connected([])) (Connected([])) = Connected([]) | addComponent (Connected([])) (Connected(x::xs)) = Connected(x::xs) 
+  | addComponent (Connected(xs)) (Connected(ys)) = Connected(xs@ys);
+
+fun add_edge Void point1 point2 = (Connected([]))
+  | add_edge (Point(a)) point1 point2 = (Connected([]))
+  | add_edge (Connected([])) point1 point2 =(Connected([]))
+  | add_edge (Connected(x::xs): ''a component) (point1:''a) (point2:''a) =  
+  let 
+    val (point , edges) = x
+    val (Point(value)) = point
+    val pointOne =Point(point1)
+    val pointTwo =Point(point2)
+    in 
+      if (value=point1 orelse value=point2) then addComponent (Connected([(point,[Edge(Point(point1),Point(point2))]@edges)])) (add_edge (Connected(xs)) point1 point2) 
+    else (addComponent (Connected([x])) (add_edge (Connected(xs)) point1 point2))
+  end;
+
+fun getPointsExcluding ([]) element= [] 
+| getPointsExcluding ((Edge (Point(value1), Point(value2)))::xs) element= if (value1 <> element) then [value1] @ getPointsExcluding (xs) element else [value2] @ getPointsExcluding (xs) element;
+
+
+fun vertices Void = []
+| vertices (Point(a)) = [a]
+| vertices (Connected([])) =[]
+| vertices (Connected(x::xs)) =
+  let
+    val (point , edges) = x
+    val (Point(value)) = point
+    in
+    [value] @ (vertices(Connected(xs)))
+end
+
+fun neighbors Void element = []
+| neighbors (Point(a)) element = []
+| neighbors (Connected([])) element = []
+| neighbors (Connected((Point(a),[])::xs)) element = neighbors (Connected(xs)) element
+| neighbors (Connected((Point(a),ys)::xs)) element = if (a=element) then getPointsExcluding (ys) element else neighbors (Connected(xs)) element
+
+fun removeSimilarEdges ((Edge (Point(value11), Point(value12)))) ((Edge (Point(value21), Point(value22))))= if ((value11=value22) orelse (value11=value21)) then ((Edge (Point(value11), Point(value12)))::[]) 
+else if ((value12=value22) orelse (value12=value21)) then ((Edge (Point(value11), Point(value12)))::[]) else ((Edge (Point(value11), Point(value12))))::((Edge (Point(value21), Point(value22))))::[];
+
+fun getAllEdges (Connected([])) =[]
+  | getAllEdges (Connected((Point(a),[])::xs)) = getAllEdges(Connected(xs))
+  | getAllEdges (Connected((Point(a),ys)::xs)) = ys@getAllEdges(Connected(xs))
+
+fun filteredges [] = []
+| filteredges (x::y::xs) = (removeSimilarEdges x y) @ filteredges xs
+
+fun getVerticesInString (Connected([])) = " "
+| getVerticesInString (Connected(x::xs)) =
+let
+   val (y::ys) = vertices (Connected(x::xs)) 
+ in
+ "\n"^"   "^y^";"^"   "^"\n"^"   "^getVerticesInString(Connected(xs))  
+ end
+
+fun getedgesinstring [] = ""
+| getedgesinstring (((Edge (Point(value1), Point(value2))))::xs) = "\n"^"   "^value1^"  --  "^value2^";"^"  "^"\n"^"   "^getedgesinstring(xs)
+
+
+fun displayGraph (Connected([])) = print(" ")
+| displayGraph (Connected(x::xs)) = 
+  let
+    val edgeslist = getAllEdges (Connected(x::xs))
+    val edgeslist' = filteredges edgeslist
+    val edgesString = getedgesinstring edgeslist'
+    val verticesString = getVerticesInString (Connected(x::xs))  
+  in
+    print("\n"^"graph {"^verticesString^edgesString^"\n"^"}") 
+  end
+
+end;
+
+
+val g1 = Graph.add_vertex (Graph.add_vertex (Graph.add_vertex Graph.empty "a") "b") "c";
+val g2 = Graph.add_edge (Graph.add_edge (Graph.add_edge g1 "a" "b") "a" "c") "b" "c";
+val g3 = Graph.add_edge (Graph.add_edge (Graph.add_edge g1 "b" "a") "c" "a") "c" "b";
+Graph.vertices Graph.empty;
+Graph.vertices (Graph.add_vertex Graph.empty "a");
+Graph.vertices g1;
+Graph.vertices g2;
+Graph.vertices g3;
+Graph.neighbors g1 "a";
+Graph.neighbors g2 "a";
+Graph.neighbors g3 "a";
+
+datatype ''a component = Void | Point of (''a ) | Connected of (''a component * (''a component) list) list 
+| Edge of (''a component * ''a component) | Connected1 of ((''a component) list) list;
+
+
+val connected1= Connected1([[Point("a"),Point("b")],[Point("c")]]);
+
+
+
+
+
+
+
+
+
+
+
+
+*****************************************
+backup
+****************************
+datatype ''a component = Void | Point of (''a ) | Connected of (''a component * (''a component) list) list 
+| Edge of (''a component * ''a component) | Connected1 of ((''a component) list) list | Path of (''a * ''a list) list;
+
+Path([(1,[1,2,3])]);
+
+  fun connectedEdges (Connected([])) flag acc = nil
+  | connectedEdges (Connected((Point(a),[])::xs)) false acc = ([[a]]) @ connectedEdges (Connected(xs)) false [[]]
+  | connectedEdges (Connected((Point(a),[])::xs)) true acc = connectedEdges (Connected(xs)) true [[]]
+  | connectedEdges ((Connected((Point(a),(e::es))::xs)): ''a component) true acc =  
+  let
+  	val Edge((Point(p1) ,Point(p2))) = e
+  in
+  	if ((p1=a) orelse (p2=a)) then connectedEdges (Connected((Point(a),es)::xs)) true [[]] else [[]]
+  end;
+
+
+  in
+    if ((p1=a) orelse (p2=a)) then p1::p2::connectedEdges (Connected((Point(a),es)::xs)) true else 
+      connectedEdges (Connected((Point(a),es)::xs)) (true)
+  end;
+
+
+*****************************************
+new - backup
+************************** 
+  fun connectedEdges (Connected([])) flag acc = Void | 
+  	connectedEdges (Connected((Point(a),[])::xs)) flag acc = connectedEdges (Connected(xs)) flag (Path([(a,[])])) | 
+  	connectedEdges (Connected((Point(a),(e::es))::xs)) flag acc = 
+  	let
+  		val Edge((Point(p1) ,Point(p2))) = e
+  	in
+  		if ((p1=a) orelse (p2=a)) then connectedEdges (Connected((Point(a),es)::xs)) flag acc else Void
+  	end;
+*****************************************
+new
+**************************
+
+  fun connectedEdges (Connected([])) flag acc = acc | 
+  	connectedEdges (Connected((Point(a),[])::xs)) flag acc = connectedEdges (Connected(xs)) flag (Path([(a,[])])) | 
+  	connectedEdges (Connected((Point(a),(e::es))::xs)) flag acc = 
+  	let
+  		val Edge((Point(p1) ,Point(p2))) = e
+  		val (Path([(vertex,ps)])) = acc
+  	in
+  		connectedEdges () flag Path([(a,[])])
+  	end;
+
+
+
+
+
+
+
+
+
+getPathFromPoints (g2) "b";
+
+
+
+*********************
+
+
+
+removeDuplicate
+***********************************************
+working version 
+************************************************
+fun getPathFromPoints (Connected([])) point = [] | 
+	getPathFromPoints (Connected((Point(a),[])::xs)) point = 
+	if (a=point) then [] else getPathFromPoints (Connected(xs)) point | 
+		getPathFromPoints (Connected((Point(a),e::es)::xs)) point = 
+		if (a=point) then let
+			val Edge((Point(p1) ,Point(p2))) = e
+			fun helper' (a) ([]) = [] |
+			helper' (a) (x::xs) =
+			let
+			 	val Edge((Point(ep1) ,Point(ep2))) = x
+			 in 
+			 	if ((a=ep1) orelse (a=ep2)) then [ep1,ep2]@helper' a xs else helper' a xs
+			 end 
+		in
+			helper' (point) (e::es)
+		end  
+		else getPathFromPoints (Connected(xs)) point;
+
+getPathFromPoints (g2) "a";
+getPathFromPoints (g2) "b";
+getPathFromPoints (g2) "c";
+getPathFromPoints (g2) "d";
+
+
+fun getConnectedPaths (Connected([])) _ = [] | 
+  getConnectedPaths (Connected((Point(a),[])::xs)) _ = [] 
+  | getConnectedPaths (original as Connected((Point(a),e::es)::xs)) acc = 
+  getPathFromPoints original (a);
+
+fun getConnectedPaths (original as (Connected((Point(a),e::es)::xs)))= getPathFromPoints original (a);
+
+fun getConnectedPaths (Connected([])) acc = [] | 
+  getConnectedPaths (Connected((Point(a),[])::xs)) acc = [] | 
+  getConnectedPaths ((Connected(x::xs))) (copy as (Connected((Point(a),edges)::ys))) = getPathFromPoints (copy)  a; 
+
+
+
+getConnectedPaths ((Connected((Point(a),[])::xs))) acc = null |
+fun getConnectedPaths ((Connected(x::xs))) (copy as (Connected((Point(a),edges)::ys))) = getPathFromPoints (copy)  a;
+
+
+getConnectedPaths (g2);
+[
+
+val test=[["a", "c", "a", "b"],["b", "c", "a", "b"],["b", "c", "a", "c"]];
+[["a", "c", "b"],["b", "c", "a"],["b", "a", "c"]]
+val test1 = [["a", "c", "a", "b"],["b", "c", "a", "b"],["b", "c", "a", "c"],[]];
+mergePath (test1) (test1);
+
+
+
+fun getConnectedPaths (Connected([])) acc = [] | 
+  getConnectedPaths (Connected((Point(a),[])::xs)) acc = getConnectedPaths (Connected(xs)) ([[a]])
+  | getConnectedPaths (original as Connected((Point(a),e::es)::xs)) acc = 
+  let
+    fun helper' (original) (Void) = [] | 
+      helper' (original) (Connected([])) = [] |
+      helper' (original) (Connected(g1::g1s)) = let
+        val (Point(b),e::es) = g1
+      in
+        removeDuplicate (getPathFromPoints (original) (b)) :: [[]] @ helper' (original) (Connected(g1s)) 
+      end
+  in
+     helper' (original) (original)
+  end;
+
+***********
+
+mergePath (test) (test);
+
+mergePath ([["a", "c"], ["a", "c", "a", "b"], ["a", "b"]]) ([["a", "c"], ["a", "c", "a", "b"], ["a", "b"]]);
+mergePath ([[1,2],[2,3]]) ([[1,2],[2,3]]);
+
+
+mergeCommonList (x1) (x2) ::[[]]
+
+mergePath ( [["a", "c"], ["a", "c", "a", "b"], ["a", "b"]]);
+
+mergeCommonList (["a", "c"]) (["a", "c", "a", "b"]);
+*************************
+
+
+fun getConnectedPaths (Connected([])) acc = [] | 
+  getConnectedPaths (Connected((Point(a),[])::xs)) acc = getConnectedPaths (Connected(xs)) ([[a]])
+  | getConnectedPaths (original as Connected((Point(a),e::es)::xs)) acc = 
+  let
+    fun helper' (original) (Void) = [] | 
+      helper' (original) (Connected([])) = [] |
+      helper' (original) (Connected(g1::g1s)) = let
+        val (Point(b),e::es) = g1
+      in
+        removeDuplicate (getPathFromPoints (original) (b)) :: [[]] @ helper' (original) (Connected(g1s)) 
+      end
+  in
+     helper' (original) (original)
+  end;
+
+
+fun mergePath ([[]]) ([[]]) = [] | 
+  mergePath (list1) ([[]]) =  [] | 
+mergePath ((x11::x12::x1s):''a list list) ((list2):''a list list) = let
+  val intermediateresult1 = [mergeCommonList (x11) (x12)]
+  val intermediateresult = intermediateresult1@x1s
+in
+  intermediateresult1  
+end;
+
+
+
+mergeCommonList (x11) (x12) ::[[]];
+
+
+fun mergeCommonList ([]) ([]) = [] | 
+	mergeCommonList (list1) ([]) = [] |
+	mergeCommonList ((list1):''a list) ((list2):''a list) = let 
+		fun helper' (x::xs) ([]) = helper' (xs) (list2) | 
+			helper' ([]) ([]) =[] | 
+			helper' (x::xs) (y::ys) = if (x=y) then removeDuplicate (list1@list2) else helper' (x::xs) (ys)
+	in
+		helper' (list1) (list2)
+	end ;
+
+
+fun removeDuplicate [] = []
+  | removeDuplicate ((l as x::xs):''a list) =
+      let fun remove (x,[]) = []
+            | remove (x,l as y::ys) = if x = y
+                                      then remove(x,ys)
+                                      else y::remove(x,ys)
+      in
+        x::removeDuplicate(remove(x,xs))
+      end;
+
+
+
+
+
+

@@ -1,0 +1,80 @@
+(* test test_name test_function
+   TYPE: string -> (unit -> bool) -> unit
+   PRE: true
+   POST: ()
+   SIDE-EFFECTS: any side-effects of test_function () other than
+     exceptions; prints whether the test test_name succeeded (i.e.,
+     test_function () = true), failed, or an exception was raised
+ *)
+fun test test_name test_function =
+    (
+        if test_function () then
+            print (" + SUCCESSFUL TEST, name: " ^ test_name ^ "\n")
+        else
+            print (" - FAILED TEST, name: " ^ test_name ^ "\n")
+    )
+    handle _ =>
+        print (" - EXCEPTION RAISED IN TEST, name: " ^ test_name ^ "\n");
+
+
+(* Do not modify the following line. Rename your file instead.
+   The file that you submit must have this name. *)
+use "lab5.sml";
+
+
+structure S = GraphAlgorithms(Graph);
+
+(* TYPE: unit -> unit
+   PRE: true
+   POST: ()
+   SIDE-EFFECTS: performs several tests and prints their results
+ *)
+(fn () =>
+
+    let
+        val g1 = Graph.add_vertex (Graph.add_vertex (Graph.add_vertex Graph.empty "a") "b") "c"
+        val g2 = Graph.add_edge (Graph.add_edge (Graph.add_edge g1 "a" "b") "a" "c") "b" "c"
+        val g3 = Graph.add_edge (Graph.add_edge (Graph.add_edge g1 "b" "a") "c" "a") "c" "b"
+    in
+        (* 2 *)
+
+        test "2.1"
+             (fn () => null (Graph.vertices Graph.empty));
+
+        test "2.2"
+             (fn () => Graph.vertices (Graph.add_vertex Graph.empty "a") = ["a"]);
+
+        test "2.3"
+             (fn () => length (Graph.vertices g1) = 3);
+
+        test "2.4"
+             (fn () => length (Graph.vertices g2) = 3);
+
+        test "2.5"
+             (fn () => length (Graph.vertices g3) = 3);
+
+        test "2.6"
+             (fn () => null (Graph.neighbors g1 "a"));
+
+        test "2.7"
+             (fn () => length (Graph.neighbors g2 "a") = 2);
+
+        test "2.8"
+             (fn () => length (Graph.neighbors g3 "a") = 2);
+
+        (* 3 *)
+
+        test "3.1"
+             (fn () => (print (S.dot g1); true));
+
+        test "3.2"
+             (fn () => (print (S.dot g2); true));
+
+        test "3.3"
+             (fn () => (print (S.dot g3); true));
+
+
+    end
+
+) ();
+

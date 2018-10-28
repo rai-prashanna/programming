@@ -1,0 +1,83 @@
+fun connectedEdges (Connected([])) flag =[]
+  | connectedEdges (Connected((Point(a),[])::xs)) flag = if (flag) then [] else []
+  | connectedEdges ((Connected((Point(a),(e::es))::xs)): ''a component) flag = 
+  let
+    val Edge((Point(p1) ,Point(p2))) = e
+  in
+    if ((p1=a) orelse (p2=a)) then p1::p2::connectedEdges (Connected((Point(a),es)::xs)) true else 
+      connectedEdges (Connected((Point(a),es)::xs)) (true)
+  end;
+
+
+
+
+
+
+(connectedEdges (Connected((Point(a),es)::xs)) true)::[[a]]
+
+
+
+  fun connectedEdges (Connected([])) flag =[]
+  | connectedEdges (Connected((Point(a),[])::xs)) flag = if (flag) then [] else connectedEdges (Connected(xs)) false
+  | connectedEdges ((Connected((Point(a),(e::es))::xs)): ''a component) flag = 
+  let
+    val Edge((Point(p1) ,Point(p2))) = e
+
+  in
+    if ((p1=a) orelse (p2=a)) then p1::p2::connectedEdges (Connected((Point(a),es)::xs)) true else 
+      connectedEdges (Connected((Point(a),es)::xs)) (true)
+  end;
+
+
+
+val g1 = add_vertex (add_vertex (add_vertex Void "a") "b") ("c");
+val g2 = add_edge (add_edge g1 "a" "b") "a" "c";
+
+connectedEdges g2 false;
+connectedEdges g1 false;
+
+[[1,2]]@[]@[[]];
+
+1::2::[[]];
+
+
+************************************************************
+new version 
+**********************************************************************
+
+datatype ''a component = Void | Point of (''a ) | Connected of (''a component * (''a component) list) list 
+| Edge of (''a component * ''a component) | Connected1 of ((''a component) list) list | Path of (''a * ''a list)
+
+  fun connectedEdges (Connected([])) flag = nil
+  | connectedEdges (Connected((Point(a),[])::xs)) false = ([[a]])@ connectedEdges (Connected(xs)) false
+  | connectedEdges (Connected((Point(a),[])::xs)) true = [[]]@connectedEdges (Connected(xs)) true;
+  | connectedEdges ((Connected((Point(a),(e::es))::xs)): ''a component) true =  
+  let
+  	val Edge((Point(p1) ,Point(p2))) = e
+  in
+  	if ((p1=a) orelse (p2=a)) then ([p1,p2])@connectedEdges (Connected((Point(a),es)::xs)) true else 
+      connectedEdges (Connected((Point(a),es)::xs)) (true)
+  end;
+
+
+  in
+    if ((p1=a) orelse (p2=a)) then p1::p2::connectedEdges (Connected((Point(a),es)::xs)) true else 
+      connectedEdges (Connected((Point(a),es)::xs)) (true)
+  end;
+
+
+[1]@[[]];
+
+([1,2])@([3,4])@[]::[[]];
+
+
+mpicc -std=c99 test.c -o test
+mpicc -std=c99 ex1-sendrecv.c -o ex1-sendrecv
+mpiexec --hostfile hosts ./ex1-sendrecv
+
+
+mpiexec --hostfile hosts ./test
+
+
+
+
